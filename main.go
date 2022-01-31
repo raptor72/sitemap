@@ -43,17 +43,19 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-        // print(sub_u.Path)
-        // print(sub_u.Scheme)
-		if sub_u.Scheme == sub_u.Host == nil {
-			resp, err := http.Get(u.Scheme + u.Host + sub_u.Path)
+        // referer like /some_link
+		if sub_u.Scheme == "" && sub_u.Host == "" {
+            fmt.Println("just path")
+			resp, err := http.Get(u.ResolveReference(sub_u).String())
 			if err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println(resp)
 		}
-
-		if sub_u.Host == u.Host && sub_u.Scheme == u.Scheme  {
+		// full referer like "http://domain.com/some_link"
+		if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
+            fmt.Println("full url")
+			fmt.Println(sub_u.String())
 			resp, err := http.Get(sub_u.String())
 			if err != nil {
 				log.Fatal(err)
