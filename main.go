@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,48 +9,43 @@ import (
 	"github.com/raptor72/glink"
 )
 
-// func bfsLinkCollector(linksArray []string, depth int, domain string) ([]string, int) {
-// func bfsLinkCollector(linksMap map[string]string, depth int, domain string) ([]string, int) {
-// 	u, err := url.Parse(domain)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
 
-// 	resp, err := http.Get(domain)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+// func bfsLinkCollector(linksMap map[string]bool, depth int, domain string) (map[string]bool, int) {
 
-// 	var startedDepth int
-// 	currentLevelLinks := make(map[string]string)
-// 	// var currentLevelLinks []string
-
-// 	links, err := glink.Parse(resp.Body)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-//     startedDepth += 1
-// 	for _, link := range links {
-// 		// currentLevelLinks = append(currentLevelLinks, link.Href)
-//         currentLevelLinks[link.Href] = link.Href
-// 	}
-
-//     // здесь надо смерджить linksArray и currentLevelLinks
-// 	// скорее всего потом это будет отдельной функцией
-//     for key, value := range currentLevelLinks {
-//     	value, ok := linksMap[key]
-//     	if ok {
-// 		    // клюбч уже есть в списке
-// 		    delete(currentLevelLinks, key)
-// 		} else {
-// 		     // этого линка нет, добавляем его в результирующую карту
-//     		linksMap[key] = value
-// 	    }
-// 	}
+// 	currentLevelLinks := make(map[string]bool)
 // }
+	// 	// var currentLevelLinks []string
+
+// 	// links, err := glink.Parse(resp.Body)
+// 	// if err != nil {
+// 	// 	log.Fatal(err)
+// 	// }
+//     // startedDepth += 1
+// 	// for _, link := range linksMap {
+// 		// currentLevelLinks = append(currentLevelLinks, link.Href)
+//         // currentLevelLinks[link] = true
+// 	for key := range linksMap {
+// 		body, _ := getLink(domain, key)
+// 		links, err := glink.Parse(body)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		for key2 := range links {
+// 			exists := currentLevelLinks[key2]
+// 			if exists {
+// 				// клюбч уже есть в списке
+// 				delete(currentLevelLinks, key2)
+// 			} else {
+// 				 // этого линка нет, добавляем его в результирующую карту
+// 				linksMap[key] = true
+// 			}
+// 		}
+
+// 	}
 
 
-func getLink(domain string, path string) (io.ReadCloser, error) {
+
+func getLink(domain string, path string) (map[string]bool, error) {
 	u, err := url.Parse(domain)
 	if err != nil {
 		log.Fatal(err)
@@ -62,62 +56,44 @@ func getLink(domain string, path string) (io.ReadCloser, error) {
 	    log.Fatal(err)
         return nil, err
 	}
-    // referer like /some_link
-    if sub_u.Scheme == "" && sub_u.Host == "" {
-	    fmt.Println("just path")
+	v := make(map[string]bool)
+	// referer like /some_link
+	if sub_u.Scheme == "" && sub_u.Host == "" {
+	    // fmt.Println("just path")
 	    resp, err := http.Get(u.ResolveReference(sub_u).String())
 	    if err != nil {
-		    log.Fatal(err)
+		    return nil, err
     	}
-	    return resp.Body, nil
-    } 
+		links, err := glink.Parse(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		for _, value := range links {
+			v[value.Href] = true
+		}
+	} 
 	// full referer like "http://domain.com/some_link"
 	if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
-	    fmt.Println("full url")
-	    fmt.Println(sub_u.String())
+	    // fmt.Println("full url")
 	    resp, err := http.Get(sub_u.String())
 	    if err != nil {
-        	log.Fatal(err)
+        	return nil, err
 	    }
-	    return resp.Body, nil
-    }
-    return nil, nil
+		links, err := glink.Parse(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		for _, value := range links {
+			v[value.Href] = true
+		}
+	}
+    return v, nil
 }
 
 
 func main() {
     // domain := "http://example.com/"
 	domain := "http://127.0.0.1:8080"
-
-	// u, err := url.Parse(domain)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// fmt.Println(u.Scheme)
-	// fmt.Println(u.Host)
-	// fmt.Println(u.Path)
-
-	resp, err := http.Get(domain)
-	if err != nil {
-		log.Fatal(err)
-	}
-    // fmt.Println(resp)
-    // fmt.Printf("%T\n", resp)
-    // fmt.Printf("%T\n", resp.Body)
-
-	links, err := glink.Parse(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-    fmt.Println(links)
-
-	for _, lnk := range links {
-        body, _ := getLink(domain, lnk.Href)
-		links, err := glink.Parse(body)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(links)
-	}
+    firstMap, _ := getLink(domain, "/")
+    fmt.Println(firstMap)
 }
