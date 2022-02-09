@@ -10,39 +10,43 @@ import (
 )
 
 
-// func bfsLinkCollector(linksMap map[string]bool, depth int, domain string) (map[string]bool, int) {
+func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) (map[string]bool, int) {
+// func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) {
 
-// 	currentLevelLinks := make(map[string]bool)
-// }
-	// 	// var currentLevelLinks []string
+    nextLevelmap := make(map[string]bool)
 
-// 	// links, err := glink.Parse(resp.Body)
-// 	// if err != nil {
-// 	// 	log.Fatal(err)
-// 	// }
-//     // startedDepth += 1
-// 	// for _, link := range linksMap {
-// 		// currentLevelLinks = append(currentLevelLinks, link.Href)
-//         // currentLevelLinks[link] = true
-// 	for key := range linksMap {
-// 		body, _ := getLink(domain, key)
-// 		links, err := glink.Parse(body)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		for key2 := range links {
-// 			exists := currentLevelLinks[key2]
-// 			if exists {
-// 				// клюбч уже есть в списке
-// 				delete(currentLevelLinks, key2)
-// 			} else {
-// 				 // этого линка нет, добавляем его в результирующую карту
-// 				linksMap[key] = true
-// 			}
-// 		}
+	for key := range currentlinksMap {   // map[/denver:true /new-york:true]
+		if alllinksMap[key] {
+			fmt.Printf("%s lik already in result map\n", key)
+		} else {
+			newMap, err := getLink(domain, key)
+			if err != nil {
+				fmt.Println(err)
+			}
+			// fmt.Println(newMap) // map[/debate:true /home:true] // map[/debate:true /home:true]
+			alllinksMap[key] = true
+			for subKey := range newMap {
+				nextLevelmap[subKey] = true
+				if alllinksMap[subKey] {
+					continue
+				} else {
+					alllinksMap[subKey] = true
+				}
+					
+			}
+            
+		}
 
-// 	}
+	}
+    fmt.Println("nextLevelmap", nextLevelmap)
+	fmt.Println("allinksMap", alllinksMap)
+	depth  += 1
+    for len(nextLevelmap) > 0 {
+		bfsLinkCollector(currentlinksMap, alllinksMap, depth, domain)
+	} 
 
+    return nextLevelmap, depth
+}
 
 
 func getLink(domain string, path string) (map[string]bool, error) {
@@ -96,4 +100,9 @@ func main() {
 	domain := "http://127.0.0.1:8080"
     firstMap, _ := getLink(domain, "/")
     fmt.Println(firstMap)
+
+	totalMap := make(map[string]bool)
+
+    allMap, _ := bfsLinkCollector(firstMap, totalMap, 3, domain)
+    fmt.Println(allMap)
 }
