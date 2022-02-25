@@ -100,32 +100,29 @@ func main() {
     // domain := "http://example.com/"
 	domain := "http://127.0.0.1:8080"
     firstMap, _ := getLink(domain, "/") // map[/denver:true /new-york:true]
-    fmt.Println(firstMap)
+    // fmt.Println(firstMap)
 
 	resMap := make(map[string]bool)
     for key := range firstMap {
 		resMap[key] = true
 	}
 
-    // allMap, _ := bfsLinkCollector(firstMap, totalMap, 3, domain)
-    // fmt.Println(allMap)
+
     for i:= len(firstMap); i > 0; {
+		middleMap := make(map[string]bool)
 		for link := range firstMap {
-            // delete(firstMap, link)
+            // fmt.Println(link)
 			newMap, _ := getLink(domain, link)
             // fmt.Println(newMap)
 			for j := range newMap {
 				if !resMap[j] {
                     resMap[j] = true
-                    delete(firstMap, j)
-				} else {
-					firstMap[j] = true
+					middleMap[j] = true
 				}
 			}
-            i = len(newMap)
-            // fmt.Println(link)
-            // fmt.Println(firstMap)
+			firstMap = middleMap
 		}
+        i = len(firstMap)
 	}
     fmt.Println(resMap)
 }
