@@ -10,43 +10,43 @@ import (
 )
 
 
-func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) (map[string]bool, int) {
-// func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) {
+// func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) (map[string]bool, int) {
+// // func bfsLinkCollector(currentlinksMap map[string]bool, alllinksMap map[string]bool, depth int, domain string) {
 
-    nextLevelmap := make(map[string]bool)
+//     nextLevelmap := make(map[string]bool)
 
-	for key := range currentlinksMap {   // map[/denver:true /new-york:true]
-		if alllinksMap[key] {
-			fmt.Printf("%s lik already in result map\n", key)
-		} else {
-			newMap, err := getLink(domain, key)
-			if err != nil {
-				fmt.Println(err)
-			}
-			// fmt.Println(newMap) // map[/debate:true /home:true] // map[/debate:true /home:true]
-			alllinksMap[key] = true
-			for subKey := range newMap {
-				nextLevelmap[subKey] = true
-				if alllinksMap[subKey] {
-					continue
-				} else {
-					alllinksMap[subKey] = true
-				}
+// 	for key := range currentlinksMap {   // map[/denver:true /new-york:true]
+// 		if alllinksMap[key] {
+// 			fmt.Printf("%s lik already in result map\n", key)
+// 		} else {
+// 			newMap, err := getLink(domain, key)
+// 			if err != nil {
+// 				fmt.Println(err)
+// 			}
+// 			// fmt.Println(newMap) // map[/debate:true /home:true] // map[/debate:true /home:true]
+// 			alllinksMap[key] = true
+// 			for subKey := range newMap {
+// 				nextLevelmap[subKey] = true
+// 				if alllinksMap[subKey] {
+// 					continue
+// 				} else {
+// 					alllinksMap[subKey] = true
+// 				}
 					
-			}
+// 			}
             
-		}
+// 		}
 
-	}
-    fmt.Println("nextLevelmap", nextLevelmap)
-	fmt.Println("allinksMap", alllinksMap)
-	depth  += 1
-    for len(nextLevelmap) > 0 {
-		bfsLinkCollector(currentlinksMap, alllinksMap, depth, domain)
-	} 
+// 	}
+//     fmt.Println("nextLevelmap", nextLevelmap)
+// 	fmt.Println("allinksMap", alllinksMap)
+// 	depth  += 1
+//     for len(nextLevelmap) > 0 {
+// 		bfsLinkCollector(currentlinksMap, alllinksMap, depth, domain)
+// 	} 
 
-    return nextLevelmap, depth
-}
+//     return nextLevelmap, depth
+// }
 
 
 func getLink(domain string, path string) (map[string]bool, error) {
@@ -91,18 +91,41 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			v[value.Href] = true
 		}
 	}
-    return v, nil
+    // fmt.Println(v)
+	return v, nil
 }
 
 
 func main() {
     // domain := "http://example.com/"
 	domain := "http://127.0.0.1:8080"
-    firstMap, _ := getLink(domain, "/")
+    firstMap, _ := getLink(domain, "/") // map[/denver:true /new-york:true]
     fmt.Println(firstMap)
 
-	totalMap := make(map[string]bool)
+	resMap := make(map[string]bool)
+    for key := range firstMap {
+		resMap[key] = true
+	}
 
-    allMap, _ := bfsLinkCollector(firstMap, totalMap, 3, domain)
-    fmt.Println(allMap)
+    // allMap, _ := bfsLinkCollector(firstMap, totalMap, 3, domain)
+    // fmt.Println(allMap)
+    for i:= len(firstMap); i > 0; {
+		for link := range firstMap {
+            // delete(firstMap, link)
+			newMap, _ := getLink(domain, link)
+            // fmt.Println(newMap)
+			for j := range newMap {
+				if !resMap[j] {
+                    resMap[j] = true
+                    delete(firstMap, j)
+				} else {
+					firstMap[j] = true
+				}
+			}
+            i = len(newMap)
+            // fmt.Println(link)
+            // fmt.Println(firstMap)
+		}
+	}
+    fmt.Println(resMap)
 }
