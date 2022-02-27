@@ -1,12 +1,20 @@
 package main
 
 import (
+    // "os"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"github.com/raptor72/glink"
+	// "encoding/xml"
 )
+
+
+// type SiteMap struct {
+// 	XMLName   xml.Name `xml:"person"`
+//     Url       string   `xml:"url>loc"`
+// }
 
 
 func bfsLinkCollector(currentlinksMap map[string]bool, domain string) map[string]bool {
