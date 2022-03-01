@@ -18,12 +18,17 @@ type SiteMap struct {
 	Urls      []Url
 }
 
-func bfsLinkCollector(currentlinksMap map[string]bool, domain string) map[string]bool {
+func bfsLinkCollector(currentlinksMap map[string]bool, domain string, maxDepth int) map[string]bool {
 	resMap := make(map[string]bool)
-    for key := range currentlinksMap {
+	for key := range currentlinksMap {
 		resMap[key] = true
 	}
-    for i:= len(currentlinksMap); i > 0; {
+    if maxDepth <= 1 {
+		return resMap
+	}
+    currentDepth := 1
+	for i:= len(currentlinksMap); i > 0; {
+        currentDepth += 1
 		middleMap := make(map[string]bool)
 		for link := range currentlinksMap {
 			newMap, _ := getLink(domain, link)
@@ -36,6 +41,9 @@ func bfsLinkCollector(currentlinksMap map[string]bool, domain string) map[string
 			currentlinksMap = middleMap
 		}
         i = len(currentlinksMap)
+        if currentDepth == maxDepth {
+			return resMap
+		}
 	}
     return resMap
 }
@@ -108,7 +116,7 @@ func main() {
     if err != nil {
 		log.Fatal(err)
 	}
-	resMap := bfsLinkCollector(firstMap, domain)
+	resMap := bfsLinkCollector(firstMap, domain, 3)
     sxml, err := map2xml(resMap, domain)
     if err != nil {
 		log.Fatal(err)
