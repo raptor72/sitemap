@@ -4,6 +4,7 @@ import (
 	"fmt"
     "flag"
 	"log"
+	"strings"
 	"net/http"
 	"net/url"
 	"github.com/raptor72/glink"
@@ -49,19 +50,19 @@ func bfsLinkCollector(currentlinksMap map[string]bool, domain string, maxDepth i
     return resMap
 }
 
-func checkIsTheSameDoamin(domain, link string) bool {
+func checkIsTheSameDoamin(domain, link string) (same, short bool) {
 	d, _ := url.Parse(domain)
 	l, err := url.Parse(link)
     if err != nil {
-		return false
+		return false, false
 	}
     if l.Scheme == "" && l.Host == "" {
-		return true
+		return true, true
 	}
     if l.Scheme == d.Scheme && l.Host == d.Host {
-		return true
+		return true, false
 	}
-    return false
+    return false, false
 }
 
 func getLink(domain string, path string) (map[string]bool, error) {
@@ -77,6 +78,7 @@ func getLink(domain string, path string) (map[string]bool, error) {
 	}
 	v := make(map[string]bool)
 	// referer like /some_link
+    // fmt.Println(sub_u.Scheme, sub_u.Host)
 	if sub_u.Scheme == "" && sub_u.Host == "" {
 	    // fmt.Println("just path")
 	    resp, err := http.Get(u.ResolveReference(sub_u).String())
@@ -88,15 +90,20 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, value := range links {
-			if checkIsTheSameDoamin(domain, value.Href) {
-				v[value.Href] = true
-			}
+			same, short := checkIsTheSameDoamin(domain, value.Href)
+            if same {
+                if short {
+					v[domain + value.Href] = true
+				} else {
+					v[value.Href] = true
+				}
+			}			
 		}
-	} 
-	// full referer like "http://domain.com/some_link"
-	if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
+	  // full referer like "http://domain.com/some_link"
+	} else if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
 	    // fmt.Println("full url")
-	    resp, err := http.Get(sub_u.String())
+        // fmt.Println(sub_u.Scheme, sub_u.Host)
+		resp, err := http.Get(sub_u.String())
 	    if err != nil {
         	return nil, err
 	    }
@@ -105,18 +112,25 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, value := range links {
-			v[value.Href] = true
+			same, short := checkIsTheSameDoamin(domain, value.Href)
+            if same {
+                if short {
+					v[domain + value.Href] = true
+				} else {
+					v[value.Href] = true
+				}
+			}	
 		}
 	}
     // fmt.Println(v)
 	return v, nil
 }
 
-func map2xml(m map[string]bool, domain string) (string, error) {
+func map2xml(m map[string]bool) (string, error) {
 	urlBlock := &Url{}
     var all_urls []Url
 	for key := range m {
-        urlBlock.Loc = domain + key
+        urlBlock.Loc = key
         all_urls = append(all_urls, *urlBlock)
 	}
 	sitemap := &SiteMap{Urls: all_urls}
@@ -127,17 +141,19 @@ func map2xml(m map[string]bool, domain string) (string, error) {
     return xml.Header + string(xdata), nil
 }
 
+
 func main() {
     domain := flag.String("domain", "http://127.0.0.1:8080", "The domain to building map")
     depth := flag.Int("depth", 3, "the depth of searching links from target domain")
 	flag.Parse()
-    fmt.Printf("Bulding the site map of %s with depth of %v.\n\n", *domain, *depth)
-    firstMap, err := getLink(*domain, "/")
+    cut_domain := strings.TrimSuffix(*domain, "/")
+	fmt.Printf("Bulding the site map of %s with depth of %v.\n\n", cut_domain, *depth)
+    firstMap, err := getLink(cut_domain, "/")
     if err != nil {
 		log.Fatal(err)
 	}
-	resMap := bfsLinkCollector(firstMap, *domain, *depth)
-    sxml, err := map2xml(resMap, *domain)
+	resMap := bfsLinkCollector(firstMap, cut_domain, *depth)
+    sxml, err := map2xml(resMap)
     if err != nil {
 		log.Fatal(err)
 	}
