@@ -49,6 +49,21 @@ func bfsLinkCollector(currentlinksMap map[string]bool, domain string, maxDepth i
     return resMap
 }
 
+func checkIsTheSameDoamin(domain, link string) bool {
+	d, _ := url.Parse(domain)
+	l, err := url.Parse(link)
+    if err != nil {
+		return false
+	}
+    if l.Scheme == "" && l.Host == "" {
+		return true
+	}
+    if l.Scheme == d.Scheme && l.Host == d.Host {
+		return true
+	}
+    return false
+}
+
 func getLink(domain string, path string) (map[string]bool, error) {
 	u, err := url.Parse(domain)
 	if err != nil {
@@ -73,7 +88,9 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, value := range links {
-			v[value.Href] = true
+			if checkIsTheSameDoamin(domain, value.Href) {
+				v[value.Href] = true
+			}
 		}
 	} 
 	// full referer like "http://domain.com/some_link"
