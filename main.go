@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+    "flag"
 	"log"
 	"net/http"
 	"net/url"
@@ -110,14 +111,16 @@ func map2xml(m map[string]bool, domain string) (string, error) {
 }
 
 func main() {
-    // domain := "http://example.com/"
-	domain := "http://127.0.0.1:8080"
-    firstMap, err := getLink(domain, "/") // map[/denver:true /new-york:true]
+    domain := flag.String("domain", "http://127.0.0.1:8080", "The domain to building map")
+    depth := flag.Int("depth", 3, "the depth of searching links from target domain")
+	flag.Parse()
+    fmt.Printf("Bulding the site map of %s with depth of %v.\n\n", *domain, *depth)
+    firstMap, err := getLink(*domain, "/")
     if err != nil {
 		log.Fatal(err)
 	}
-	resMap := bfsLinkCollector(firstMap, domain, 3)
-    sxml, err := map2xml(resMap, domain)
+	resMap := bfsLinkCollector(firstMap, *domain, *depth)
+    sxml, err := map2xml(resMap, *domain)
     if err != nil {
 		log.Fatal(err)
 	}
