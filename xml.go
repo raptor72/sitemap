@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	// "os"
 	"fmt"
 	"encoding/xml"
 )
@@ -29,6 +29,10 @@ func main() {
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
-    os.Stdout.Write([]byte(xml.Header))
-	os.Stdout.Write(xdata)
+
+	// xdata = append(xdata, []uint8(xml.Header))
+	// os.Stdout.Write([]byte(xml.Header))
+ 	// os.Stdout.Write(xdata)
+    fmt.Println(xml.Header + string(xdata))
+	// fmt.Printf("%T\n", xml.Header)
 }

@@ -1,21 +1,22 @@
 package main
 
 import (
-    // "os"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"github.com/raptor72/glink"
-	// "encoding/xml"
+	"encoding/xml"
 )
 
-
-// type SiteMap struct {
-// 	XMLName   xml.Name `xml:"person"`
-//     Url       string   `xml:"url>loc"`
-// }
-
+type Url struct {
+	XMLName   xml.Name `xml:"url"`
+	Loc       string   `xml:"loc"`
+}
+type SiteMap struct {
+	XMLName   xml.Name `xml:"http://www.sitemaps.org/schemas/sitemap/0.9 urlset"`
+	Urls      []Url
+}
 
 func bfsLinkCollector(currentlinksMap map[string]bool, domain string) map[string]bool {
 	resMap := make(map[string]bool)
@@ -85,11 +86,32 @@ func getLink(domain string, path string) (map[string]bool, error) {
 	return v, nil
 }
 
+func map2xml(m map[string]bool, domain string) (string, error) {
+	urlBlock := &Url{}
+    var all_urls []Url
+	for key := range m {
+        urlBlock.Loc = domain + key
+        all_urls = append(all_urls, *urlBlock)
+	}
+	sitemap := &SiteMap{Urls: all_urls}
+	xdata, err := xml.MarshalIndent(sitemap, " ", "    ")
+	if err != nil {
+		return "", err
+	}
+    return xml.Header + string(xdata), nil
+}
 
 func main() {
     // domain := "http://example.com/"
 	domain := "http://127.0.0.1:8080"
-    firstMap, _ := getLink(domain, "/") // map[/denver:true /new-york:true]
+    firstMap, err := getLink(domain, "/") // map[/denver:true /new-york:true]
+    if err != nil {
+		log.Fatal(err)
+	}
 	resMap := bfsLinkCollector(firstMap, domain)
-    fmt.Println(resMap)
+    sxml, err := map2xml(resMap, domain)
+    if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(sxml)
 }
