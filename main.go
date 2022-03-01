@@ -50,19 +50,19 @@ func bfsLinkCollector(currentlinksMap map[string]bool, domain string, maxDepth i
     return resMap
 }
 
-func checkIsTheSameDoamin(domain, link string) (same, short bool) {
+func checkIsTheSameDoamin(domain, link string) (same bool, preffix string) {
 	d, _ := url.Parse(domain)
 	l, err := url.Parse(link)
     if err != nil {
-		return false, false
+		return false, ""
 	}
     if l.Scheme == "" && l.Host == "" {
-		return true, true
+		return true, domain
 	}
     if l.Scheme == d.Scheme && l.Host == d.Host {
-		return true, false
+		return true, ""
 	}
-    return false, false
+    return false, ""
 }
 
 func getLink(domain string, path string) (map[string]bool, error) {
@@ -77,8 +77,7 @@ func getLink(domain string, path string) (map[string]bool, error) {
         return nil, err
 	}
 	v := make(map[string]bool)
-	// referer like /some_link
-    // fmt.Println(sub_u.Scheme, sub_u.Host)
+	// short referer like /some_link
 	if sub_u.Scheme == "" && sub_u.Host == "" {
 	    // fmt.Println("just path")
 	    resp, err := http.Get(u.ResolveReference(sub_u).String())
@@ -90,19 +89,14 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, value := range links {
-			same, short := checkIsTheSameDoamin(domain, value.Href)
+			same, preffix := checkIsTheSameDoamin(domain, value.Href)
             if same {
-                if short {
-					v[domain + value.Href] = true
-				} else {
-					v[value.Href] = true
-				}
+				v[preffix + value.Href] = true
 			}			
 		}
 	  // full referer like "http://domain.com/some_link"
 	} else if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
 	    // fmt.Println("full url")
-        // fmt.Println(sub_u.Scheme, sub_u.Host)
 		resp, err := http.Get(sub_u.String())
 	    if err != nil {
         	return nil, err
@@ -112,17 +106,12 @@ func getLink(domain string, path string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, value := range links {
-			same, short := checkIsTheSameDoamin(domain, value.Href)
+			same, preffix := checkIsTheSameDoamin(domain, value.Href)
             if same {
-                if short {
-					v[domain + value.Href] = true
-				} else {
-					v[value.Href] = true
-				}
+				v[preffix + value.Href] = true
 			}	
 		}
 	}
-    // fmt.Println(v)
 	return v, nil
 }
 
