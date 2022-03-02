@@ -77,40 +77,24 @@ func getLink(domain string, path string) (map[string]bool, error) {
         return nil, err
 	}
 	v := make(map[string]bool)
-	// short referer like /some_link
+	requested_url := sub_u.String()
 	if sub_u.Scheme == "" && sub_u.Host == "" {
-	    // fmt.Println("just path")
-	    resp, err := http.Get(u.ResolveReference(sub_u).String())
-	    if err != nil {
-		    return nil, err
-    	}
-		links, err := glink.Parse(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		for _, value := range links {
-			same, preffix := checkIsTheSameDoamin(domain, value.Href)
-            if same {
-				v[preffix + value.Href] = true
-			}			
-		}
-	  // full referer like "http://domain.com/some_link"
-	} else if sub_u.Scheme == u.Scheme && sub_u.Host == u.Host {
-	    // fmt.Println("full url")
-		resp, err := http.Get(sub_u.String())
-	    if err != nil {
-        	return nil, err
-	    }
-		links, err := glink.Parse(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		for _, value := range links {
-			same, preffix := checkIsTheSameDoamin(domain, value.Href)
-            if same {
-				v[preffix + value.Href] = true
-			}	
-		}
+        requested_url = u.ResolveReference(sub_u).String()
+	}
+	resp, err := http.Get(requested_url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	links, err := glink.Parse(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	for _, value := range links {
+		same, preffix := checkIsTheSameDoamin(domain, value.Href)
+		if same {
+			v[preffix + value.Href] = true
+		}	
 	}
 	return v, nil
 }
